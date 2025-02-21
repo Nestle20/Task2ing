@@ -13,9 +13,16 @@ public abstract class Shape {
         this.size = size;
     }
 
+    // Устанавливает верхний левый угол фигуры
     public void setPosition(double x, double y) {
         this.x = x;
         this.y = y;
+    }
+
+    // Устанавливает центр фигуры
+    public void setCenterPosition(double centerX, double centerY) {
+        this.x = centerX - size / 2;
+        this.y = centerY - size / 2;
     }
 
     public abstract void draw(GraphicsContext gc);

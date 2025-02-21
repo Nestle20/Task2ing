@@ -1,17 +1,19 @@
 package com.example.task2ing;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.collections.FXCollections;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ColorPicker;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
+import javafx.util.Duration;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Stack;
 
 public class HelloController {
     @FXML
@@ -22,21 +24,45 @@ public class HelloController {
     private TextField sizeInput;
     @FXML
     private ColorPicker colorPicker;
+    @FXML
+    private Button clearButton;
+    @FXML
+    private Button undoButton;
+    @FXML
+    private CheckBox garlandCheckBox; // Чекбокс для режима "Гирлянда"
 
     private ShapeFactory shapeFactory = new ShapeFactory();
     private ArrayList<Shape> shapes = new ArrayList<>();
     private Stack<Shape> undoStack = new Stack<>();
-    private PriorityQueue<String> shapeQueue = new PriorityQueue<>();
-    private Map<String, Integer> shapeCountMap = new HashMap<>();
+    private ArrayList<Shape> garlandShapes = new ArrayList<>(); // Фигуры, нарисованные после активации гирлянды
 
     private boolean isDrawing = false;
-    private Shape currentShape = null;
+    private Shape currentShape = null;//ЗДЕСЬ БУДЕТ ПРИСВАИВАНИЕ!!!!
+    private boolean isGarlandMode = false;
+    private Timeline garlandTimeline;
 
     // Инициализация ListView
     public void initialize() {
         shapeListView.setItems(FXCollections.observableArrayList(
-                "Линия", "Квадрат", "Треугольник", "Круг", "Угол", "Пятиугольник"
+                "Линия", "Квадрат", "Треугольник", "Круг", "Угол", "Шестиугольник"
         ));
+
+        // Инициализация анимации для гирлянды
+        garlandTimeline = new Timeline(
+                new KeyFrame(Duration.millis(100), event -> animateGarland())
+        );
+        garlandTimeline.setCycleCount(Timeline.INDEFINITE);
+
+        // Подключаем чекбокс к режиму "Гирлянда"
+        garlandCheckBox.selectedProperty().addListener((obs, wasSelected, isNowSelected) -> {
+            isGarlandMode = isNowSelected;
+            if (isGarlandMode) {
+                garlandTimeline.play();
+            } else {
+                garlandTimeline.stop();
+                redrawCanvas(); // Восстанавливаем фигуры в нормальном состоянии
+            }
+        });
     }
 
     // Метод для очистки холста
@@ -45,8 +71,28 @@ public class HelloController {
         gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
         shapes.clear();
         undoStack.clear();
-        shapeQueue.clear();
-        shapeCountMap.clear();
+        garlandShapes.clear(); // Очищаем фигуры, нарисованные в режиме гирлянды
+    }
+
+    // Анимация гирлянды
+    private void animateGarland() {
+        GraphicsContext gc = canvas.getGraphicsContext2D();
+        gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+
+        // Перерисовываем фигуры, нарисованные до активации гирлянды
+        for (Shape shape : shapes) {
+            if (!garlandShapes.contains(shape)) {
+                shape.draw(gc);
+            }
+        }
+
+        // Анимируем фигуры, нарисованные в режиме гирлянды
+        for (Shape shape : garlandShapes) {
+            double alpha = Math.random(); // Случайная прозрачность
+            gc.setGlobalAlpha(alpha);
+            shape.draw(gc);
+        }
+        gc.setGlobalAlpha(1.0); // Возвращаем прозрачность к норме
     }
 
     // Создаёт фигуру на основе выбранного названия
@@ -62,8 +108,8 @@ public class HelloController {
                 return shapeFactory.createShape("Circle", color, size);
             case "Угол":
                 return shapeFactory.createShape("Angle", color, size);
-            case "Пятиугольник":
-                return shapeFactory.createShape("Pentagon", color, size);
+            case "Шестиугольник":
+                return shapeFactory.createShape("Hexagon", color, size);
             default:
                 return null;
         }
@@ -106,16 +152,27 @@ public class HelloController {
             }
 
             if (currentShape != null) {
-                // Устанавливаем позицию фигуры на место курсора
-                currentShape.setPosition(event.getX(), event.getY());
-                currentShape.draw(gc);
+                // Устанавливаем позицию фигуры
+                if (shapeName.equals("Круг")) {
+                    // Для круга центр фигуры - место нажатия
+                    currentShape.setCenterPosition(event.getX(), event.getY());
+                } else {
+                    // Для остальных фигур верхний левый угол - место нажатия
+                    currentShape.setPosition(event.getX(), event.getY());
+                }
+
+                if (!isGarlandMode) {
+                    currentShape.draw(gc);
+                }
+
                 // Добавляем фигуру в список и стек для отмены
                 shapes.add(currentShape);
                 undoStack.push(currentShape);
 
-                // Обновляем статистику
-                shapeQueue.add(shapeName);
-                shapeCountMap.put(shapeName, shapeCountMap.getOrDefault(shapeName, 0) + 1);
+                // Если режим гирлянды активен, добавляем фигуру в список гирлянды
+                if (isGarlandMode) {
+                    garlandShapes.add(currentShape);
+                }
 
                 // Создаем новую фигуру для следующего рисования
                 currentShape = createShapeByName(shapeName, color, size);
@@ -130,6 +187,7 @@ public class HelloController {
         if (!undoStack.isEmpty()) {
             Shape lastShape = undoStack.pop();
             shapes.remove(lastShape);
+            garlandShapes.remove(lastShape); // Удаляем фигуру из списка гирлянды
             redrawCanvas();
         }
     }
@@ -141,5 +199,8 @@ public class HelloController {
         for (Shape shape : shapes) {
             shape.draw(gc);
         }
+    }
+
+    public void onGarlandMode(ActionEvent actionEvent) {
     }
 }
