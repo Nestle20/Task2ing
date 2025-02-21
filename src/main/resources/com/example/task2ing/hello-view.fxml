@@ -1,16 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.VBox?>
-
+<?import javafx.scene.control.ColorPicker?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.canvas.Canvas?>
 <?import javafx.scene.control.Button?>
-<VBox alignment="CENTER" spacing="20.0" xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.example.task2ing.HelloController">
-    <padding>
-        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
-    </padding>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.TextField?>
 
-    <Label fx:id="welcomeText"/>
-    <Button text="Hello!" onAction="#onHelloButtonClick"/>
-</VBox>
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.example.task2ing.HelloController">
+    <top>
+        <ListView fx:id="shapeListView" prefHeight="100" prefWidth="200"/>
+    </top>
+    <center>
+        <Canvas fx:id="canvas" width="600" height="400" onMousePressed="#onMousePressed" onMouseReleased="#onMouseReleased" onMouseDragged="#onMouseDragged"/>
+    </center>
+    <bottom>
+        <HBox spacing="10" alignment="center">
+            <ColorPicker fx:id="colorPicker" prefWidth="200"/>
+            <TextField fx:id="sizeInput" promptText="Размер" prefWidth="100"/>
+            <Button fx:id="clearButton" text="Очистить холст" onAction="#onClear"/>
+            <Button fx:id="undoButton" text="Отменить" onAction="#onUndo"/>
+        </HBox>
+    </bottom>
+</BorderPane>
