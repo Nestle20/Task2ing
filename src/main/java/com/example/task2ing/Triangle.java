@@ -11,8 +11,17 @@ public class Triangle extends Shape {
     @Override
     public void draw(GraphicsContext gc) {
         gc.setFill(color);
-        double[] xPoints = {x, x + size, x + size / 2};
-        double[] yPoints = {y, y, y + size};
+        double halfSize = size / 2;
+        double[] xPoints = {
+                x - halfSize, // Левый угол
+                x + halfSize, // Правый угол
+                x            // Вершина (центр)
+        };
+        double[] yPoints = {
+                y + halfSize, // Левый и правый углы
+                y + halfSize, // Левый и правый углы
+                y - halfSize  // Вершина
+        };
         gc.fillPolygon(xPoints, yPoints, 3);
     }
 }

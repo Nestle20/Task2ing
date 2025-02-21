@@ -15,8 +15,8 @@ public class ShapeFactory {
                 return new Angle(color, size);
             case "Triangle":
                 return new Triangle(color, size);
-            case "Rectangle":
-                return new Rectangle(color, size, size, size); // Здесь можно изменить ширину и высоту
+            case "Hexagon":
+                return new Hexagon(color, size);
             default:
                 return null;
         }

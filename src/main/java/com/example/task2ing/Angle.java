@@ -12,7 +12,7 @@ public class Angle extends Shape {
     public void draw(GraphicsContext gc) {
         gc.setStroke(color);
         gc.setLineWidth(size);
-        gc.strokeLine(x, y, x + size, y);
-        gc.strokeLine(x + size, y, x + size, y + size);
+        gc.strokeLine(x - size / 2, y, x + size / 2, y);
+        gc.strokeLine(x + size / 2, y, x + size / 2, y + size / 2);
     }
 }

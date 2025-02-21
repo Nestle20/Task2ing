@@ -18,5 +18,22 @@ public abstract class Shape {
         this.y = y;
     }
 
+    public void setCenterPosition(double centerX, double centerY) {
+        this.x = centerX - size / 2;
+        this.y = centerY - size / 2;
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
+    }
+
+    public double getX() {
+        return x;
+    }
+
+    public double getY() {
+        return y;
+    }
+
     public abstract void draw(GraphicsContext gc);
 }

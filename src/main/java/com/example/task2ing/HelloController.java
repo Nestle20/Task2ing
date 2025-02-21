@@ -1,15 +1,16 @@
 package com.example.task2ing;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.collections.FXCollections;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ColorPicker;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
+import javafx.util.Duration;
 
 import java.util.*;
 
@@ -22,83 +23,106 @@ public class HelloController {
     private TextField sizeInput;
     @FXML
     private ColorPicker colorPicker;
+    @FXML
+    private Button clearButton;
+    @FXML
+    private Button undoButton;
+    @FXML
+    private CheckBox garlandCheckBox;
+    @FXML
+    private Button selectButton;
 
     private ShapeFactory shapeFactory = new ShapeFactory();
-    private ArrayList<Shape> shapes = new ArrayList<>();
+    private Group group = new Group(Color.TRANSPARENT, 0);
     private Stack<Shape> undoStack = new Stack<>();
-    private PriorityQueue<String> shapeQueue = new PriorityQueue<>();
-    private Map<String, Integer> shapeCountMap = new HashMap<>();
+    private List<Shape> garlandShapes = new ArrayList<>();
+    private Queue<Shape> shapeQueue = new LinkedList<>();
 
     private boolean isDrawing = false;
     private Shape currentShape = null;
+    private boolean isGarlandMode = false;
+    private Timeline garlandTimeline;
 
-    // Инициализация ListView
+    private SelectionArea selectionArea = new SelectionArea();
+    private boolean isSelecting = false;
+
     public void initialize() {
         shapeListView.setItems(FXCollections.observableArrayList(
-                "Линия", "Квадрат", "Треугольник", "Круг", "Угол", "Пятиугольник"
+                "Линия", "Квадрат", "Треугольник", "Круг", "Угол", "Шестиугольник"
         ));
+
+        garlandTimeline = new Timeline(
+                new KeyFrame(Duration.millis(100), event -> animateGarland())
+        );
+        garlandTimeline.setCycleCount(Timeline.INDEFINITE);
+
+        garlandCheckBox.selectedProperty().addListener((obs, wasSelected, isNowSelected) -> {
+            isGarlandMode = isNowSelected;
+            if (isGarlandMode) {
+                garlandTimeline.play();
+            } else {
+                garlandTimeline.stop();
+                redrawCanvas();
+            }
+        });
     }
 
-    // Метод для очистки холста
-    public void onClear() {
+    @FXML
+    private void onClear() {
         GraphicsContext gc = canvas.getGraphicsContext2D();
         gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
-        shapes.clear();
+        group.getShapes().clear();
         undoStack.clear();
+        garlandShapes.clear();
         shapeQueue.clear();
-        shapeCountMap.clear();
     }
 
-    // Создаёт фигуру на основе выбранного названия
-    private Shape createShapeByName(String shapeName, Color color, double size) {
-        switch (shapeName) {
-            case "Линия":
-                return shapeFactory.createShape("Line", color, size);
-            case "Квадрат":
-                return shapeFactory.createShape("Square", color, size);
-            case "Треугольник":
-                return shapeFactory.createShape("Triangle", color, size);
-            case "Круг":
-                return shapeFactory.createShape("Circle", color, size);
-            case "Угол":
-                return shapeFactory.createShape("Angle", color, size);
-            case "Пятиугольник":
-                return shapeFactory.createShape("Pentagon", color, size);
-            default:
-                return null;
+    private void animateGarland() {
+        GraphicsContext gc = canvas.getGraphicsContext2D();
+        gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+
+        for (Shape shape : group.getShapes()) {
+            if (!garlandShapes.contains(shape)) {
+                shape.draw(gc);
+            }
+        }
+
+        for (Shape shape : garlandShapes) {
+            double alpha = Math.random();
+            gc.setGlobalAlpha(alpha);
+            shape.draw(gc);
+        }
+        gc.setGlobalAlpha(1.0);
+    }
+
+    @FXML
+    private void onMousePressed(MouseEvent event) {
+        if (isSelecting) {
+            selectionArea.setStart(event.getX(), event.getY());
+        } else {
+            isDrawing = true;
+            onMouseDragged(event);
         }
     }
 
-    // Показывает уведомление об ошибке
-    private void showAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-    // Обработчик для нажатия мыши
-    @FXML
-    private void onMousePressed(MouseEvent event) {
-        isDrawing = true;
-        onMouseDragged(event);
-    }
-
-    // Обработчик для отпускания мыши
     @FXML
     private void onMouseReleased(MouseEvent event) {
-        isDrawing = false;
-        currentShape = null;
+        if (isSelecting) {
+            selectionArea.setEnd(event.getX(), event.getY());
+            changeColorInSelection(colorPicker.getValue());
+            isSelecting = false;
+        } else {
+            isDrawing = false;
+            currentShape = null;
+        }
     }
 
-    // Обработчик для движения мыши при зажатой клавише
     @FXML
     private void onMouseDragged(MouseEvent event) {
         if (isDrawing) {
-            String shapeName = shapeListView.getSelectionModel().getSelectedItem(); // Получаем выбранное название фигуры
-            Color color = colorPicker.getValue(); // Получаем цвет
-            double size = Double.parseDouble(sizeInput.getText()); // Получаем размер фигуры
+            String shapeName = shapeListView.getSelectionModel().getSelectedItem();
+            Color color = colorPicker.getValue();
+            double size = Double.parseDouble(sizeInput.getText());
             GraphicsContext gc = canvas.getGraphicsContext2D();
 
             if (currentShape == null) {
@@ -106,40 +130,86 @@ public class HelloController {
             }
 
             if (currentShape != null) {
-                // Устанавливаем позицию фигуры на место курсора
-                currentShape.setPosition(event.getX(), event.getY());
-                currentShape.draw(gc);
-                // Добавляем фигуру в список и стек для отмены
-                shapes.add(currentShape);
+                if (shapeName.equals("Круг")) {
+                    currentShape.setCenterPosition(event.getX(), event.getY());
+                } else {
+                    currentShape.setPosition(event.getX(), event.getY());
+                }
+
+                if (!isGarlandMode) {
+                    currentShape.draw(gc);
+                }
+
+                group.addShape(currentShape);
                 undoStack.push(currentShape);
+                shapeQueue.add(currentShape);
 
-                // Обновляем статистику
-                shapeQueue.add(shapeName);
-                shapeCountMap.put(shapeName, shapeCountMap.getOrDefault(shapeName, 0) + 1);
+                if (isGarlandMode) {
+                    garlandShapes.add(currentShape);
+                }
 
-                // Создаем новую фигуру для следующего рисования
                 currentShape = createShapeByName(shapeName, color, size);
-            } else {
-                showAlert("Ошибка", "Неверное название фигуры.");
             }
         }
     }
 
-    // Метод для отмены последнего действия
-    public void onUndo() {
+    @FXML
+    private void onUndo() {
         if (!undoStack.isEmpty()) {
             Shape lastShape = undoStack.pop();
-            shapes.remove(lastShape);
+            group.removeShape(lastShape);
+            garlandShapes.remove(lastShape);
             redrawCanvas();
         }
     }
 
-    // Перерисовываем холст с учетом удаленных фигур
+    @FXML
+    private void onSelectMode(ActionEvent event) {
+        isSelecting = true;
+    }
+
+    @FXML
+    private void onGarlandMode(ActionEvent event) {
+        isGarlandMode = garlandCheckBox.isSelected();
+        if (isGarlandMode) {
+            garlandTimeline.play();
+        } else {
+            garlandTimeline.stop();
+            redrawCanvas();
+        }
+    }
+
+    private void changeColorInSelection(Color newColor) {
+        for (Shape shape : group.getShapes()) {
+            if (selectionArea.contains(shape.getX(), shape.getY())) {
+                shape.setColor(newColor);
+            }
+        }
+        redrawCanvas();
+    }
+
     private void redrawCanvas() {
         GraphicsContext gc = canvas.getGraphicsContext2D();
         gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
-        for (Shape shape : shapes) {
-            shape.draw(gc);
+        group.draw(gc);
+    }
+
+    private Shape createShapeByName(String shapeName, Color color, double size) {
+        switch (shapeName) {
+            case "Линия":
+                return new Line(color, size);
+            case "Квадрат":
+                return new Square(color, size);
+            case "Треугольник":
+                return new Triangle(color, size);
+            case "Круг":
+                return new Circle(color, size);
+            case "Угол":
+                return new Angle(color, size);
+            case "Шестиугольник":
+                return new Hexagon(color, size);
+            default:
+                return null;
         }
     }
 }
