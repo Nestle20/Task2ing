@@ -1,145 +1,176 @@
 package com.example.task2ing;
 
-import javafx.collections.FXCollections;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.fxml.FXML;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ColorPicker;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.paint.Color;
+import javafx.scene.control.Button;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.Pane;
+import javafx.stage.DirectoryChooser;
+import javafx.util.Duration;
 
-import java.util.*;
+import java.io.File;
 
-public class HelloController {
-    @FXML
-    private Canvas canvas;
-    @FXML
-    private ListView<String> shapeListView;
-    @FXML
-    private TextField sizeInput;
-    @FXML
-    private ColorPicker colorPicker;
+    public class HelloController {
 
-    private ShapeFactory shapeFactory = new ShapeFactory();
-    private ArrayList<Shape> shapes = new ArrayList<>();
-    private Stack<Shape> undoStack = new Stack<>();
-    private PriorityQueue<String> shapeQueue = new PriorityQueue<>();
-    private Map<String, Integer> shapeCountMap = new HashMap<>();
+        @FXML
+        private ImageView screen;
 
-    private boolean isDrawing = false;
-    private Shape currentShape = null;
+        @FXML
+        private Pane indicatorPane;
 
-    // Инициализация ListView
-    public void initialize() {
-        shapeListView.setItems(FXCollections.observableArrayList(
-                "Линия", "Квадрат", "Треугольник", "Круг", "Угол", "Пятиугольник"
-        ));
-    }
+        @FXML
+        private Button startButton, stopButton, chooseDirectoryButton, previousButton, nextButton, firstButton, lastButton;
 
-    // Метод для очистки холста
-    public void onClear() {
-        GraphicsContext gc = canvas.getGraphicsContext2D();
-        gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
-        shapes.clear();
-        undoStack.clear();
-        shapeQueue.clear();
-        shapeCountMap.clear();
-    }
+        private static final int SLIDESHOW_DELAY = 1000; // 1 секунда
 
-    // Создаёт фигуру на основе выбранного названия
-    private Shape createShapeByName(String shapeName, Color color, double size) {
-        switch (shapeName) {
-            case "Линия":
-                return shapeFactory.createShape("Line", color, size);
-            case "Квадрат":
-                return shapeFactory.createShape("Square", color, size);
-            case "Треугольник":
-                return shapeFactory.createShape("Triangle", color, size);
-            case "Круг":
-                return shapeFactory.createShape("Circle", color, size);
-            case "Угол":
-                return shapeFactory.createShape("Angle", color, size);
-            case "Пятиугольник":
-                return shapeFactory.createShape("Pentagon", color, size);
-            default:
-                return null;
+        private ConcreteAggregate slides;
+        private Iterator iter;
+        private Timeline timeline;
+        private boolean isPlaying = false;
+
+        private Builder indicatorBuilder;
+        private int currentSlideIndex = 0;
+        private int totalSlides;
+
+        public void initialize() {
+            setButtonGraphics();
+            timeline = new Timeline();
+            timeline.setCycleCount(Timeline.INDEFINITE);
+            indicatorBuilder = new ConcreteBuilder();
         }
-    }
 
-    // Показывает уведомление об ошибке
-    private void showAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
+        private void setButtonGraphics() {
+            setButtonGraphic(firstButton, "⏪");
+            setButtonGraphic(previousButton, "⏪");
+            setButtonGraphic(startButton, "▶");
+            setButtonGraphic(stopButton, "⏹");
+            setButtonGraphic(nextButton, "⏩");
+            setButtonGraphic(lastButton, "⏩");
+        }
 
-    // Обработчик для нажатия мыши
-    @FXML
-    private void onMousePressed(MouseEvent event) {
-        isDrawing = true;
-        onMouseDragged(event);
-    }
+        private void setButtonGraphic(Button button, String text) {
+            button.setText(text); // Устанавливаем текстовый символ
+            button.setStyle("-fx-font-size: 20; -fx-background-color: transparent;"); // Настраиваем стиль кнопки
+        }
 
-    // Обработчик для отпускания мыши
-    @FXML
-    private void onMouseReleased(MouseEvent event) {
-        isDrawing = false;
-        currentShape = null;
-    }
+        @FXML
+        public void startSlideshow() {if (slides != null && !isPlaying) {
+            isPlaying = true;
+            timeline.getKeyFrames().clear();
+            timeline.getKeyFrames().add(new KeyFrame(Duration.millis(SLIDESHOW_DELAY), e -> nextImage()));
+            timeline.play();
+        }
+        }
 
-    // Обработчик для движения мыши при зажатой клавише
-    @FXML
-    private void onMouseDragged(MouseEvent event) {
-        if (isDrawing) {
-            String shapeName = shapeListView.getSelectionModel().getSelectedItem(); // Получаем выбранное название фигуры
-            Color color = colorPicker.getValue(); // Получаем цвет
-            double size = Double.parseDouble(sizeInput.getText()); // Получаем размер фигуры
-            GraphicsContext gc = canvas.getGraphicsContext2D();
-
-            if (currentShape == null) {
-                currentShape = createShapeByName(shapeName, color, size);
-            }
-
-            if (currentShape != null) {
-                // Устанавливаем позицию фигуры на место курсора
-                currentShape.setPosition(event.getX(), event.getY());
-                currentShape.draw(gc);
-                // Добавляем фигуру в список и стек для отмены
-                shapes.add(currentShape);
-                undoStack.push(currentShape);
-
-                // Обновляем статистику
-                shapeQueue.add(shapeName);
-                shapeCountMap.put(shapeName, shapeCountMap.getOrDefault(shapeName, 0) + 1);
-
-                // Создаем новую фигуру для следующего рисования
-                currentShape = createShapeByName(shapeName, color, size);
-            } else {
-                showAlert("Ошибка", "Неверное название фигуры.");
+        @FXML
+        public void stopSlideshow() {
+            if (isPlaying) {
+                isPlaying = false;
+                timeline.stop();
             }
         }
+
+        @FXML
+        public void chooseDirectory() {
+            DirectoryChooser directoryChooser = new DirectoryChooser();
+            directoryChooser.setTitle("Выберите папку с изображениями");
+
+            // Открываем диалог выбора папки
+            File selectedDirectory = directoryChooser.showDialog(screen.getScene().getWindow());
+
+            if (selectedDirectory != null && selectedDirectory.isDirectory()) {
+                slides = new ConcreteAggregate(selectedDirectory.getAbsolutePath());
+                iter = slides.getIterator();
+                totalSlides = slides.size();
+
+                // Загружаем первое изображение, если оно есть
+                if (iter.hasNext()) {
+                    currentSlideIndex = 0;
+                    updateSlide((Image) iter.next());
+                    // Создаем индикатор
+                    indicatorBuilder.setIndicator(totalSlides, currentSlideIndex + 1);
+                    indicatorBuilder.linePaint(currentSlideIndex + 1);
+                    Indicator indicator = indicatorBuilder.build();
+                    indicator.show(indicatorPane);
+                } else {
+                    System.out.println("В выбранной папке нет изображений.");
+                }
+            }
+        }
+        private void updateIndicator() {
+            if (slides != null) {
+                // Очищаем старый индикатор
+                indicatorPane.getChildren().clear();
+
+                // Создаем новый индикатор
+                indicatorBuilder.reset(); // Сбрасываем состояние билдера
+                indicatorBuilder.setIndicator(slides.size(), currentSlideIndex + 1); // Устанавливаем индикатор для текущего слайда
+                indicatorBuilder.linePaint(currentSlideIndex + 1); // Обновляем индикатор с новым значением
+
+                Indicator indicator = indicatorBuilder.build(); // Строим индикатор
+                indicator.show(indicatorPane); // Отображаем индикатор на панели
+            }
+        }
+
+
+        @FXML
+        public void nextImage() {
+            if (iter != null && iter.hasNext()) {
+                if (currentSlideIndex < totalSlides - 1) {
+                    currentSlideIndex++;
+                    updateSlide((Image) iter.next());
+                    //indicatorBuilder.linePaint(currentSlideIndex + 1);
+                    updateIndicator(); // Обновляем индикатор
+                }
+            }
+        }
+
+        @FXML
+        public void previousImage() {
+            if (iter != null) {
+                if (currentSlideIndex > 0) {
+                    currentSlideIndex = Math.max(0, currentSlideIndex - 1);
+                    updateSlide((Image) iter.preview());
+                    //indicatorBuilder.linePaint(currentSlideIndex + 1);
+                    updateIndicator(); // Обновляем индикатор
+                }
+            }
+        }
+
+        @FXML
+        public void goToFirstImage() {
+            if (slides != null) {
+                currentSlideIndex = 0;
+            /*updateSlide(slides.getFirstImage());
+            indicatorBuilder.linePaint(currentSlideIndex + 1);*/
+                iter = slides.getIterator();
+                updateSlide(slides.getFirstImage());
+                updateIndicator();
+            }
+        }
+
+        @FXML
+        public void goToLastImage() {
+            if (slides != null) {
+                currentSlideIndex = slides.size() - 1;
+            /*updateSlide(slides.getLastImage());
+            indicatorBuilder.linePaint(currentSlideIndex + 1);*/
+                iter = slides.getIterator();
+
+                for (int i = 0; i < currentSlideIndex; i++) {
+                    iter.next();
+                }
+                updateSlide(slides.getLastImage());
+                updateIndicator();
+            }
+        }
+
+        private void updateSlide(Image image) {
+            screen.setImage(image);
+        }
+
     }
 
-    // Метод для отмены последнего действия
-    public void onUndo() {
-        if (!undoStack.isEmpty()) {
-            Shape lastShape = undoStack.pop();
-            shapes.remove(lastShape);
-            redrawCanvas();
-        }
-    }
 
-    // Перерисовываем холст с учетом удаленных фигур
-    private void redrawCanvas() {
-        GraphicsContext gc = canvas.getGraphicsContext2D();
-        gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
-        for (Shape shape : shapes) {
-            shape.draw(gc);
-        }
-    }
-}

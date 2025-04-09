@@ -1,28 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.ColorPicker?>
-<?import javafx.scene.control.ListView?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.canvas.Canvas?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
 
-<BorderPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.example.task2ing.HelloController">
-    <top>
-        <ListView fx:id="shapeListView" prefHeight="100" prefWidth="200"/>
-    </top>
-    <center>
-        <Canvas fx:id="canvas" width="600" height="400" onMousePressed="#onMousePressed" onMouseReleased="#onMouseReleased" onMouseDragged="#onMouseDragged"/>
-    </center>
-    <bottom>
-        <HBox spacing="10" alignment="center">
-            <ColorPicker fx:id="colorPicker" prefWidth="200"/>
-            <TextField fx:id="sizeInput" promptText="Размер" prefWidth="100"/>
-            <Button fx:id="clearButton" text="Очистить холст" onAction="#onClear"/>
-            <Button fx:id="undoButton" text="Отменить" onAction="#onUndo"/>
-        </HBox>
-    </bottom>
-</BorderPane>
+<!-- Добавленный импорт -->
+
+<VBox alignment="CENTER" spacing="10" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.task2ing.HelloController">
+    <!-- Кнопка "Выберите папку" -->
+    <Button fx:id="chooseDirectoryButton" onAction="#chooseDirectory" prefHeight="54.0" style="-fx-background-color: gray; -fx-background-radius: 0; -fx-pref-width: 100; -fx-pref-height: 50;" text="Выбрать папку" textFill="WHITE" />
+
+    <!-- ImageView для отображения изображений -->
+    <ImageView fx:id="screen" fitHeight="400" fitWidth="600" />
+
+    <!-- Панель с кнопками управления -->
+    <HBox alignment="CENTER" spacing="10">
+        <Button fx:id="firstButton" onAction="#goToFirstImage" style="-fx-background-radius: 8; -fx-font-size: 3; -fx-background-size: 3; -fx-padding: -2;" />
+        <Button fx:id="previousButton" onAction="#previousImage" style="-fx-background-radius: 8; -fx-padding: -2;" />
+        <Button fx:id="startButton" onAction="#startSlideshow" style="-fx-background-radius: 8; -fx-padding: -2;" />
+        <Button fx:id="stopButton" onAction="#stopSlideshow" style="-fx-background-radius: 8; -fx-padding: -2;" />
+        <Button fx:id="nextButton" onAction="#nextImage" style="-fx-background-radius: 8; -fx-padding: -2;" />
+        <Button fx:id="lastButton" onAction="#goToLastImage" style="-fx-background-radius: 8; -fx-padding: -2;" />
+    </HBox>
+
+    <!-- Панель с индикатором -->
+    <VBox>
+        <Label />
+        <!-- Центрирование AnchorPane с индикатором -->
+        <AnchorPane fx:id="indicatorPane" prefHeight="50" prefWidth="600" />
+    </VBox>
+</VBox>
