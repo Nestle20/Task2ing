@@ -1,28 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.ColorPicker?>
-<?import javafx.scene.control.ListView?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.canvas.Canvas?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.control.TextField?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
 
-<BorderPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.example.task2ing.HelloController">
-    <top>
-        <ListView fx:id="shapeListView" prefHeight="100" prefWidth="200"/>
-    </top>
-    <center>
-        <Canvas fx:id="canvas" width="600" height="400" onMousePressed="#onMousePressed" onMouseReleased="#onMouseReleased" onMouseDragged="#onMouseDragged"/>
-    </center>
-    <bottom>
-        <HBox spacing="10" alignment="center">
-            <ColorPicker fx:id="colorPicker" prefWidth="200"/>
-            <TextField fx:id="sizeInput" promptText="Размер" prefWidth="100"/>
-            <Button fx:id="clearButton" text="Очистить холст" onAction="#onClear"/>
-            <Button fx:id="undoButton" text="Отменить" onAction="#onUndo"/>
-        </HBox>
-    </bottom>
-</BorderPane>
+<VBox alignment="CENTER" spacing="10" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.task2ing.HelloController">
+    <padding>
+        <Insets bottom="10" left="10" right="10" top="10" />
+    </padding>
+
+    <!-- Таймер -->
+    <HBox alignment="CENTER" spacing="10">
+        <Label text="Таймер" />
+        <TextField fx:id="timerField" promptText="Время" />
+        <Label text="Повтор" />
+        <TextField fx:id="repeatField" promptText="Повтор" />
+        <Button fx:id="startButton" onAction="#start" style="-fx-background-color: lightblue; -fx-text-fill: black;" text="Старт" />
+        <Button fx:id="stopButton" onAction="#stop" style="-fx-background-color: red; -fx-text-fill: white;" text="Стоп" />
+    </HBox>
+
+    <!-- Состояние таймера -->
+    <Label fx:id="statusLabel" text="Таймер неактивен" />
+
+    <!-- Прошло_с -->
+    <HBox alignment="CENTER" spacing="10">
+        <Label text="Прошло" />
+        <TextField fx:id="textField" editable="false" prefWidth="200" />
+        <Button fx:id="textStartButton" onAction="#startText" style="-fx-background-color: lightblue; -fx-text-fill: black;" text="Старт" />
+        <Button fx:id="textStopButton" onAction="#stopText" style="-fx-background-color: red; -fx-text-fill: white;" text="Стоп" />
+    </HBox>
+
+    <!-- Звонок -->
+    <HBox alignment="CENTER" spacing="10">
+        <Label text="Музыка" />
+        <TextField fx:id="bellField" promptText="Звонок" />
+        <Button fx:id="bellStartButton" onAction="#startBell" style="-fx-background-color: lightblue; -fx-text-fill: black;" text="Старт" />
+        <Button fx:id="bellStopButton" onAction="#stopBell" style="-fx-background-color: red; -fx-text-fill: white;" text="Стоп" />
+    </HBox>
+
+    <!-- Песочные часы -->
+    <HBox alignment="CENTER" spacing="10">
+        <Label text="Анимация" />
+        <Button fx:id="clockStartButton" onAction="#startClock" style="-fx-background-color: lightblue; -fx-text-fill: black;" text="Старт" />
+        <Button fx:id="clockStopButton" onAction="#stopClock" style="-fx-background-color: red; -fx-text-fill: white;" text="Стоп" />
+    </HBox>
+
+    <!-- ImageView для анимации -->
+    <ImageView fx:id="clockGif" fitHeight="200" fitWidth="200" visible="false" />
+</VBox>

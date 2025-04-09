@@ -9,10 +9,10 @@ import javafx.stage.Stage;
 public class HelloApplication extends Application {
 
     @Override
-    public void start(Stage primaryStage) throws Exception{
+    public void start(Stage primaryStage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("hello-view.fxml"));
-        primaryStage.setTitle("Рисование фигур");
-        primaryStage.setScene(new Scene(root, 800, 600));
+        primaryStage.setTitle("Time Server");
+        primaryStage.setScene(new Scene(root, 600, 500));
         primaryStage.show();
     }
 

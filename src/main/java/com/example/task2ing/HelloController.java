@@ -1,145 +1,132 @@
 package com.example.task2ing;
 
-import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ColorPicker;
-import javafx.scene.control.ListView;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.paint.Color;
-
-import java.util.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 
 public class HelloController {
     @FXML
-    private Canvas canvas;
+    private TextField timerField;
     @FXML
-    private ListView<String> shapeListView;
+    private TextField repeatField;
     @FXML
-    private TextField sizeInput;
+    private Button startButton;
     @FXML
-    private ColorPicker colorPicker;
+    private Button stopButton;
+    @FXML
+    private Button resetButton;
+    @FXML
+    private Label statusLabel;
+    @FXML
+    private TextField textField;
+    @FXML
+    private Button textStartButton;
+    @FXML
+    private Button textStopButton;
+    @FXML
+    private TextField bellField;
+    @FXML
+    private Button bellStartButton;
+    @FXML
+    private Button bellStopButton;
+    @FXML
+    private Button clockStartButton;
+    @FXML
+    private Button clockStopButton;
+    @FXML
+    private ImageView clockGif; // ImageView для отображения GIF
 
-    private ShapeFactory shapeFactory = new ShapeFactory();
-    private ArrayList<Shape> shapes = new ArrayList<>();
-    private Stack<Shape> undoStack = new Stack<>();
-    private PriorityQueue<String> shapeQueue = new PriorityQueue<>();
-    private Map<String, Integer> shapeCountMap = new HashMap<>();
+    private TimeServer timeServer;
+    private ComponentText componentText;
+    private ComponentMusic componentMusic;
+    private AnimationPlayer animationPlayer;
 
-    private boolean isDrawing = false;
-    private Shape currentShape = null;
-
-    // Инициализация ListView
+    @FXML
     public void initialize() {
-        shapeListView.setItems(FXCollections.observableArrayList(
-                "Линия", "Квадрат", "Треугольник", "Круг", "Угол", "Пятиугольник"
-        ));
-    }
+        timeServer = new TimeServer();
+        componentText = new ComponentText(textField);
 
-    // Метод для очистки холста
-    public void onClear() {
-        GraphicsContext gc = canvas.getGraphicsContext2D();
-        gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
-        shapes.clear();
-        undoStack.clear();
-        shapeQueue.clear();
-        shapeCountMap.clear();
-    }
-
-    // Создаёт фигуру на основе выбранного названия
-    private Shape createShapeByName(String shapeName, Color color, double size) {
-        switch (shapeName) {
-            case "Линия":
-                return shapeFactory.createShape("Line", color, size);
-            case "Квадрат":
-                return shapeFactory.createShape("Square", color, size);
-            case "Треугольник":
-                return shapeFactory.createShape("Triangle", color, size);
-            case "Круг":
-                return shapeFactory.createShape("Circle", color, size);
-            case "Угол":
-                return shapeFactory.createShape("Angle", color, size);
-            case "Пятиугольник":
-                return shapeFactory.createShape("Pentagon", color, size);
-            default:
-                return null;
-        }
-    }
-
-    // Показывает уведомление об ошибке
-    private void showAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-    // Обработчик для нажатия мыши
-    @FXML
-    private void onMousePressed(MouseEvent event) {
-        isDrawing = true;
-        onMouseDragged(event);
-    }
-
-    // Обработчик для отпускания мыши
-    @FXML
-    private void onMouseReleased(MouseEvent event) {
-        isDrawing = false;
-        currentShape = null;
-    }
-
-    // Обработчик для движения мыши при зажатой клавише
-    @FXML
-    private void onMouseDragged(MouseEvent event) {
-        if (isDrawing) {
-            String shapeName = shapeListView.getSelectionModel().getSelectedItem(); // Получаем выбранное название фигуры
-            Color color = colorPicker.getValue(); // Получаем цвет
-            double size = Double.parseDouble(sizeInput.getText()); // Получаем размер фигуры
-            GraphicsContext gc = canvas.getGraphicsContext2D();
-
-            if (currentShape == null) {
-                currentShape = createShapeByName(shapeName, color, size);
-            }
-
-            if (currentShape != null) {
-                // Устанавливаем позицию фигуры на место курсора
-                currentShape.setPosition(event.getX(), event.getY());
-                currentShape.draw(gc);
-                // Добавляем фигуру в список и стек для отмены
-                shapes.add(currentShape);
-                undoStack.push(currentShape);
-
-                // Обновляем статистику
-                shapeQueue.add(shapeName);
-                shapeCountMap.put(shapeName, shapeCountMap.getOrDefault(shapeName, 0) + 1);
-
-                // Создаем новую фигуру для следующего рисования
-                currentShape = createShapeByName(shapeName, color, size);
-            } else {
-                showAlert("Ошибка", "Неверное название фигуры.");
+        // Проверка на пустые строки и нечисловые значения
+        int bellDelay = 5; // Значение по умолчанию
+        if (!bellField.getText().isEmpty()) {
+            try {
+                bellDelay = Integer.parseInt(bellField.getText());
+            } catch (NumberFormatException e) {
+                statusLabel.setText("Ошибка: неверное значение для задержки звонка");
             }
         }
+        componentMusic = new ComponentMusic(bellDelay);
+
+        // Загрузка GIF-анимации
+        Image clockImage = new Image(getClass().getResourceAsStream("clook.gif"));
+        clockGif.setImage(clockImage);
+
+        // Инициализация AnimationPlayer с ImageView
+        animationPlayer = new AnimationPlayer(timeServer, clockGif);
+
+        timeServer.attach(componentText);
+        timeServer.attach(componentMusic);
+        timeServer.attach(animationPlayer);
     }
 
-    // Метод для отмены последнего действия
-    public void onUndo() {
-        if (!undoStack.isEmpty()) {
-            Shape lastShape = undoStack.pop();
-            shapes.remove(lastShape);
-            redrawCanvas();
+    @FXML
+    public void start() {
+        try {
+            timeServer.start();
+            statusLabel.setText("Таймер активен");
+        } catch (Exception e) {
+            e.printStackTrace();
+            statusLabel.setText("Ошибка при запуске таймера: " + e.getMessage());
         }
     }
 
-    // Перерисовываем холст с учетом удаленных фигур
-    private void redrawCanvas() {
-        GraphicsContext gc = canvas.getGraphicsContext2D();
-        gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
-        for (Shape shape : shapes) {
-            shape.draw(gc);
+    @FXML
+    public void stop() {
+        timeServer.stop();
+        statusLabel.setText("Таймер остановлен");
+    }
+
+    @FXML
+    public void reset() {
+        timeServer.reset();
+        statusLabel.setText("Таймер сброшен");
+    }
+
+    @FXML
+    public void startText() {
+        componentText.start();
+    }
+
+    @FXML
+    public void stopText() {
+        componentText.stop();
+    }
+
+    @FXML
+    public void startBell() {
+        try {
+            int bellDelay = Integer.parseInt(bellField.getText());
+            componentMusic.start(bellDelay);
+        } catch (NumberFormatException e) {
+            statusLabel.setText("Ошибка: неверное значение для задержки звонка");
         }
+    }
+
+    @FXML
+    public void stopBell() {
+        componentMusic.stop();
+    }
+
+    @FXML
+    public void startClock() {
+        animationPlayer.startAnimationEvery(20); // По умолчанию 20 секунд
+    }
+
+    @FXML
+    public void stopClock() {
+        animationPlayer.stopAnimation();
     }
 }
