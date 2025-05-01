@@ -45,7 +45,8 @@
 4. Фигура будет нарисована на холсте, и её название будет выведено в консоль.
 
 ## Демонстрация работы программы
-![Рабочее окно программы](https://github.com/Nestle20/Task2/blob/Task2/src/![2024-11-28](https://github.com/user-attachments/assets/8abe222f-f24a-425d-a2cd-89000e8cbc40)
+![Рабочее окно программы](![2024-11-28](https://github.com/user-attachments/assets/927ffd98-a88d-4217-b633-466fb66ce9f5)
+)
 )
 ## Архитектура
 ![Вывод на экран Диаграммы Классов](https://github.com/Nestle20/Task2/blob/Task2/src/TASK2.png?raw=true)
